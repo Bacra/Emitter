@@ -1,0 +1,21 @@
+{
+	"name": "Emitter",
+	"title": "Emitter for JavaScript",
+	"description": "Javascript event listener class with Timeline",
+	"version": "1.0.0",
+	"keywords": ["javascript", "method", "listener", "timeline"],
+	"author": "Bacra Woo <Bacra.Woo@gmail.com>",
+	"devDependencies": {
+		"grunt": "*",
+		"grunt-gcc": "*"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/Bacra/Emitter.git"
+	},
+	"main": "./lib/emitter.js",
+	"licenses": [{
+		"type": "MIT",
+		"url": "https://github.com/Bacra/Emitter/blob/master/LICENSE.md"
+	}]
+}

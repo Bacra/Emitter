@@ -1,3 +1,5 @@
+/* Emitter v@VERSION */
+
 var Emitter = (function(){
 
 	// 全局工具函数
