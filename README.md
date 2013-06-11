@@ -1,4 +1,4 @@
-Emitter
+tEmitter
 =======
 
 简单快速为JS方法创建监听队列，同时增加时间轴概念，提供`before` `after` `final`三个时间段
@@ -9,7 +9,7 @@ Emitter
 ## Get Started
 
 
-	Emitter(method, obj);
+	tEmitter(method, obj);
 
 
 
@@ -78,8 +78,6 @@ Event对象包含如下属性和方法：
 
 当`widthBaseParam`定义为`true`时（默认为`false`），set/get的内容为 **baseParam** ，否则为 **runParam** ；
 两者的区别是 **baseParam** 中的值会一直存在，不受到 **runParam** 的修改而变化； **runParam** 中设置的值，在调用一次`emit`后会自动清空（嵌套调用不继承）
-
-
 
 
 ## License

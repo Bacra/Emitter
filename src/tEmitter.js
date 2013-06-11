@@ -1,6 +1,3 @@
-/* Emitter v@VERSION */
-
-var Emitter = (function(){
 
 	// 全局工具函数
 	function toArray(args){
@@ -242,4 +239,3 @@ var Emitter = (function(){
 			}
 		};
 	};
-})();

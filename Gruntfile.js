@@ -2,14 +2,35 @@ module.exports = function(grunt) {
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
 
+		concat: {
+			options: {
+				banner: '/** tEmitter v<%= pkg.version %> */<%= grunt.util.linefeed %>'
+			},
+			node: {
+				src: [
+					'src/intro-node.js',
+					'src/tEmitter.js',
+					'src/outro.js'
+				],
+				dest: 'lib/tEmitter.js'
+			},
+			js: {
+				src: [
+					'src/intro-js.js',
+					'src/tEmitter.js',
+					'src/outro.js'
+				],
+				dest: 'dist/tEmitter.js'
+			}
+		},
 		gcc: {
-			Emitter: {
-				src: 'src/emitter.js',
-				dest: 'dist/emitter.min.js',
+			js: {
+				src: 'dist/tEmitter.js',
+				dest: 'dist/tEmitter.min.js',
 				options: {
-					banner: '/*! MisEvent <%= pkg.version %> */',
+					banner: '/*! tEmitter <%= pkg.version %> */',
 					source_map_format: 'V3',
-					create_source_map: 'dist/emitter.js.map'
+					create_source_map: 'dist/tEmitter.js.map'
 				}
 			}
 		}
@@ -17,17 +38,8 @@ module.exports = function(grunt) {
 	});
 
 
-	grunt.registerTask('embed', 'Embed version etc.', function() {
-		var version = grunt.config('pkg.version');
-
-		var code = grunt.file.read('./src/emitter.js');
-		code = code.replace(/@VERSION/g, version);
-		grunt.file.write('./lib/emitter.js', code);
-
-		grunt.log.writeln('@VERSION is replaced to "' + version + '".');
-	});
-
 	grunt.loadNpmTasks('grunt-gcc');
+	grunt.loadNpmTasks('grunt-contrib-concat');
 
-	grunt.registerTask('default', ['embed', 'gcc']);
+	grunt.registerTask('default', ['concat', 'gcc']);
 };

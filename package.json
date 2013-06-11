@@ -1,21 +1,22 @@
 {
-	"name": "Emitter",
-	"title": "Emitter for JavaScript",
+	"name": "tEmitter",
+	"title": "tEmitter for JavaScript",
 	"description": "Javascript event listener class with Timeline",
 	"version": "1.0.0",
 	"keywords": ["javascript", "method", "listener", "timeline"],
 	"author": "Bacra Woo <Bacra.Woo@gmail.com>",
 	"devDependencies": {
 		"grunt": "*",
-		"grunt-gcc": "*"
+		"grunt-gcc": "*",
+		"grunt-contrib-concat": "*"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/Bacra/Emitter.git"
+		"url": "git://github.com/Bacra/tEmitter.js.git"
 	},
-	"main": "./lib/emitter.js",
+	"main": "./lib/tEmitter.js",
 	"licenses": [{
 		"type": "MIT",
-		"url": "https://github.com/Bacra/Emitter/blob/master/LICENSE.md"
+		"url": "https://github.com/Bacra/tEmitter.js/blob/master/LICENSE.md"
 	}]
 }
