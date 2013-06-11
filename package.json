@@ -17,6 +17,6 @@
 	"main": "./lib/tEmitter.js",
 	"licenses": [{
 		"type": "MIT",
-		"url": "https://github.com/Bacra/tEmitter.js/blob/master/LICENSE.md"
+		"url": "LICENSE.md"
 	}]
 }
