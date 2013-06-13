@@ -57,7 +57,7 @@
 	
 
 
-	return function(defaultCall, _obj){
+	return function(defaultCall, _obj){		// defaultCall 第一个参数必须是event，如果不是，自行转化
 		var _before = [],
 			_after = [],
 			_final = [],
@@ -137,7 +137,14 @@
 			'param': getParamFunc(getParam, setParam, _obj),
 			'removeParam': removeParam,
 			'trigger': function(){
-				if (defaultCall) return defaultCall.apply(_obj, arguments);
+				if (defaultCall) {
+					var args = toArray(arguments);
+					args.unshift({
+						'param': function(){},
+						'removeParam': function(){}
+					});
+					return defaultCall.apply(_obj, args);
+				}
 			},
 			'emit': function(){
 				var args = toArray(arguments),
@@ -160,7 +167,6 @@
 						return funcData;
 					},
 					runList = function(list){
-						// before list run
 						for (i = 0; !isStop && i < list.length; i++) {
 							funcData = list[i];
 							if (funcData.disabled) {
@@ -169,7 +175,7 @@
 								continue;
 							}
 
-							args[0] = new Event(funcData);
+							args[0] = new Event(funcData, list);
 
 							preReturn = funcData.func.apply(_obj, args);
 							if (preReturn === false) {
@@ -182,16 +188,16 @@
 
 				_runParam = {};			// 清空 防止影响到内部的嵌套调用
 
-				var Event = function(funcData){
+				var Event = function(funcData, list){
 					this['data'] = funcData.data;
 					this['off'] = funcData.off;
 					this['preReturn'] = preReturn;
 					this['next'] = function(){					// 调用next只可能返回两种值 true 和 false
 						if (isStop) return false;
 
-						var funcData = getAvailableFuncData(_before, ++i);
+						var funcData = getAvailableFuncData(list, ++i);
 						if (funcData) {
-							args[0] = new Event(funcData);
+							args[0] = new Event(funcData, list);
 							preReturn = funcData.func.apply(_obj, args);
 							if (preReturn === false) {
 								isStop = true;
