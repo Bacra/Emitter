@@ -57,7 +57,7 @@
 	
 
 
-	return function(defaultCall, _obj){		// defaultCall 第一个参数必须是event，如果不是，自行转化
+	return function(defaultCall, _obj){
 		var _before = [],
 			_after = [],
 			_final = [],
@@ -137,14 +137,7 @@
 			'param': getParamFunc(getParam, setParam, _obj),
 			'removeParam': removeParam,
 			'trigger': function(){
-				if (defaultCall) {
-					var args = toArray(arguments);
-					args.unshift({
-						'param': function(){},
-						'removeParam': function(){}
-					});
-					return defaultCall.apply(_obj, args);
-				}
+				if (defaultCall) return defaultCall.apply(_obj, arguments);
 			},
 			'emit': function(){
 				var args = toArray(arguments),
@@ -217,18 +210,12 @@
 				args.unshift(null);			// Event placeholder
 
 
-				// after list run
+				// before list run
 				runList(_before);
 
 				// defaultCall run
 				if (!isStop && !isDefaultPrevented && defaultCall) {
-					args[0] = {
-						'preReturn': preReturn,
-						'param': myRunParam,
-						'removeParam': removeParam
-					};
-					preReturn = defaultReturn = defaultCall.apply(_obj, args);
-					if (preReturn === false) isStop = true;
+					preReturn = defaultReturn = defaultCall.apply(_obj, arguments);
 				}
 
 
