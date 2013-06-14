@@ -58,6 +58,8 @@ var tEmitter = (function(){
 	}
 	
 
+	function noop(){};
+
 
 	return function(defaultCall, _obj){
 		var _before = [],
@@ -148,9 +150,6 @@ var tEmitter = (function(){
 
 					isStop = false,
 					isDefaultPrevented = false,
-					preventDefaultFn = function(){
-						isDefaultPrevented = true;
-					},
 					getAvailableFuncData = function(list, index){
 						var funcData = list[index];
 						if (!funcData) return false;
@@ -187,6 +186,7 @@ var tEmitter = (function(){
 					this['data'] = funcData.data;
 					this['off'] = funcData.off;
 					this['preReturn'] = preReturn;
+					this['isDefaultPrevented'] = isDefaultPrevented;
 					this['next'] = function(){					// 调用next只可能返回两种值 true 和 false
 						if (isStop) return false;
 
@@ -206,7 +206,10 @@ var tEmitter = (function(){
 				Event.prototype = {
 					'param': myRunParam,
 					'removeParam': removeParam,
-					'preventDefault': preventDefaultFn
+					'preventDefault': function(){
+						isDefaultPrevented = true;
+						this['isDefaultPrevented'] = true;
+					}
 				};
 
 				args.unshift(null);			// Event placeholder
@@ -222,6 +225,7 @@ var tEmitter = (function(){
 
 
 				Event.prototype['defaultReturn'] = defaultReturn;
+				Event.prototype['preventDefault'] = noop;
 
 				// after list run
 				runList(_after);
