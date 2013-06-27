@@ -188,8 +188,8 @@
 					this['next'] = function(){					// 调用next只可能返回两种值 true 和 false
 						if (isStop) return false;
 
-						var funcData = getAvailableFuncData(list, ++i);
-						if (funcData) {
+						var funcData;
+						while((funcData = getAvailableFuncData(list, ++i))) {
 							args[0] = new Event(funcData, list);
 							preReturn = funcData.func.apply(_obj, args);
 							if (preReturn === false) {

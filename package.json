@@ -2,7 +2,7 @@
 	"name": "tEmitter",
 	"title": "tEmitter for JavaScript",
 	"description": "Javascript event listener class with Timeline",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"keywords": ["javascript", "method", "listener", "timeline"],
 	"author": "Bacra Woo <Bacra.Woo@gmail.com>",
 	"devDependencies": {
