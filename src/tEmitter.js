@@ -148,18 +148,8 @@
 
 					isStop = false,
 					isDefaultPrevented = false,
-					getAvailableFuncData = function(list, index){
-						var funcData = list[index];
-						if (!funcData) return false;
-
-						if (funcData.disabled) {
-							list.splice(index, 1);
-							return getAvailableFuncData(list, index);
-						}
-						return funcData;
-					},
-					runList = function(list){
-						for (i = 0; !isStop && i < list.length; i++) {
+					runList = function(list, startIndex){
+						for (i = startIndex; !isStop && i < list.length; i++) {
 							funcData = list[i];
 							if (funcData.disabled) {
 								list.splice(i, 1);
@@ -172,9 +162,11 @@
 							preReturn = funcData.func.apply(_obj, args);
 							if (preReturn === false) {
 								isStop = true;
-								break;
+								return false;
 							}
 						}
+
+						return true;
 					},
 					myRunParam = getRunParamFunc(_runParam, _baseParam, getParamFunc(getParam, setParam, _obj));
 
@@ -186,19 +178,7 @@
 					this['preReturn'] = preReturn;
 					this['isDefaultPrevented'] = isDefaultPrevented;
 					this['next'] = function(){					// 调用next只可能返回两种值 true 和 false
-						if (isStop) return false;
-
-						var funcData;
-						while((funcData = getAvailableFuncData(list, ++i))) {
-							args[0] = new Event(funcData, list);
-							preReturn = funcData.func.apply(_obj, args);
-							if (preReturn === false) {
-								isStop = true;
-								return false;
-							}
-						}
-
-						return true;
+						return runList(list, ++i);
 					};
 				};
 				Event.prototype = {
@@ -214,7 +194,7 @@
 
 
 				// before list run
-				runList(_before);
+				runList(_before, 0);
 
 				// defaultCall run
 				if (!isStop && !isDefaultPrevented && defaultCall) {
@@ -226,11 +206,11 @@
 				Event.prototype['preventDefault'] = noop;
 
 				// after list run
-				runList(_after);
+				runList(_after, 0);
 
 				// final list run
 				isStop = false;		// 为final 重置isStop
-				runList(_final);
+				runList(_final, 0);
 
 				return defaultReturn;
 			}
