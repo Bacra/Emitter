@@ -145,6 +145,7 @@
 			},
 			'emit': function(){
 				var args = toArray(arguments),
+					defCall = defaultCall,
 					preReturn, defaultReturn,
 					i, funcData,
 
@@ -182,6 +183,7 @@
 				};
 				Event.prototype = {
 					'isDefaultPrevented': false,
+					'isDefaultOverrided': false,
 					'param': myRunParam,
 					'removeParam': removeParam,
 					'setDefaultReturn': returnFalseFunc,
@@ -196,6 +198,12 @@
 						Event.prototype['defaultReturn'] = defReturn;
 
 						return true;
+					},
+					'overrideDefault': function(newDefaultReturn){
+						defCall = newDefaultReturn;
+						Event.prototype['isDefaultOverrided'] = true;
+						Event.prototype['overrideDefault'] = returnFalseFunc;
+						return true;
 					}
 				};
 
@@ -205,9 +213,11 @@
 				// before list run
 				runList(_before, 0);
 
+				Event.prototype['preventDefault'] = returnFalseFunc;
+				Event.prototype['overrideDefault'] = returnFalseFunc;
 				// defaultCall run
-				if (!isStop && !isDefaultPrevented && defaultCall) {
-					preReturn = defaultReturn = defaultCall.apply(_obj, arguments);
+				if (!isStop && !isDefaultPrevented && defCall) {
+					preReturn = defaultReturn = defCall.apply(_obj, arguments);
 					Event.prototype['defaultReturn'] = defaultReturn;
 				}
 
@@ -216,10 +226,9 @@
 					Event.prototype['defaultReturn'] = defReturn;
 					return true;
 				};
-				Event.prototype['preventDefault'] = returnFalseFunc;
 
 				// after list run
-				runList(_after, 0);
+				if (!isDefaultPrevented) runList(_after, 0);
 
 				// final list run
 				isStop = false;		// 为final 重置isStop
