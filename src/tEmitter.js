@@ -58,7 +58,7 @@
 
 	function returnFalseFunc(){
 		return false;
-	};
+	}
 
 
 	return function(defaultCall, _obj){
@@ -184,6 +184,7 @@
 					'isDefaultPrevented': false,
 					'param': myRunParam,
 					'removeParam': removeParam,
+					'setDefaultReturn': returnFalseFunc,
 					'next': function(){			// 调用next只可能返回两种值 true 和 false
 						return runList(this['list'], ++i);
 					},
@@ -210,6 +211,11 @@
 					Event.prototype['defaultReturn'] = defaultReturn;
 				}
 
+				Event.prototype['setDefaultReturn'] = function(defReturn){
+					defaultReturn = defReturn;
+					Event.prototype['defaultReturn'] = defReturn;
+					return true;
+				};
 				Event.prototype['preventDefault'] = returnFalseFunc;
 
 				// after list run
