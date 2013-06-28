@@ -56,7 +56,9 @@
 	}
 	
 
-	function noop(){};
+	function returnFalseFunc(){
+		return false;
+	};
 
 
 	return function(defaultCall, _obj){
@@ -176,17 +178,23 @@
 					this['data'] = funcData.data;
 					this['off'] = funcData.off;
 					this['preReturn'] = preReturn;
-					this['isDefaultPrevented'] = isDefaultPrevented;
-					this['next'] = function(){					// 调用next只可能返回两种值 true 和 false
-						return runList(list, ++i);
-					};
+					this['list'] = list;
 				};
 				Event.prototype = {
+					'isDefaultPrevented': false,
 					'param': myRunParam,
 					'removeParam': removeParam,
-					'preventDefault': function(){
+					'next': function(){			// 调用next只可能返回两种值 true 和 false
+						return runList(this['list'], ++i);
+					},
+					'preventDefault': function(defReturn){
 						isDefaultPrevented = true;
-						this['isDefaultPrevented'] = true;
+						Event.prototype['isDefaultPrevented'] = true;
+						Event.prototype['preventDefault'] = returnFalseFunc;
+						defaultReturn = defReturn;
+						Event.prototype['defaultReturn'] = defReturn;
+
+						return true;
 					}
 				};
 
@@ -199,11 +207,10 @@
 				// defaultCall run
 				if (!isStop && !isDefaultPrevented && defaultCall) {
 					preReturn = defaultReturn = defaultCall.apply(_obj, arguments);
+					Event.prototype['defaultReturn'] = defaultReturn;
 				}
 
-
-				Event.prototype['defaultReturn'] = defaultReturn;
-				Event.prototype['preventDefault'] = noop;
+				Event.prototype['preventDefault'] = returnFalseFunc;
 
 				// after list run
 				runList(_after, 0);
