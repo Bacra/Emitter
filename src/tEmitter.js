@@ -115,7 +115,7 @@
 			'emit': function(){
 				var args = toArray(arguments),
 					defCall = defaultCall,
-					preReturn, defaultReturn,
+					defaultReturn,
 					curIndex, curFuncData, curList,
 
 					isStop = false,
@@ -132,8 +132,7 @@
 
 							args[0] = new Event();
 
-							preReturn = curFuncData.func.apply(_obj, args);
-							if (preReturn === false) {
+							if ((Event.prototype['preReturn'] = curFuncData.func.apply(_obj, args)) === false) {
 								isStop = true;
 								return false;
 							}
@@ -154,7 +153,7 @@
 						Event.prototype['overrideDefault'] = returnFalseFunc;
 						// defaultCall run
 						if (!isStop && !isDefaultPrevented && defCall) {
-							preReturn = defaultReturn = defCall.apply(_obj, arguments);
+							Event.prototype['preReturn'] = defaultReturn = defCall.apply(_obj, arguments);
 							Event.prototype['defaultReturn'] = defaultReturn;
 						}
 
@@ -175,7 +174,6 @@
 
 				var Event = function(){
 					this['data'] = curFuncData.data;
-					this['preReturn'] = preReturn;
 				};
 				Event.prototype = {
 					'isDefaultPrevented': false,
