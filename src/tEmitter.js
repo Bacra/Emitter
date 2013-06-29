@@ -132,7 +132,7 @@
 
 							args[0] = new Event();
 
-							if ((Event.prototype['preReturn'] = curFuncData.func.apply(_obj, args)) === false) {
+							if ((EventProto['preReturn'] = curFuncData.func.apply(_obj, args)) === false) {
 								isStop = true;
 								return false;
 							}
@@ -142,22 +142,22 @@
 					},
 					setDefaultReturn = function(defReturn){
 						defaultReturn = defReturn;
-						Event.prototype['defaultReturn'] = defReturn;
+						EventProto['defaultReturn'] = defReturn;
 						return true;
 					},
 					isInAsync = false,
 					hasRunAfter = false,
 					runAfter = function(){
 						hasRunAfter = true;
-						Event.prototype['preventDefault'] = returnFalseFunc;
-						Event.prototype['overrideDefault'] = returnFalseFunc;
+						EventProto['preventDefault'] = returnFalseFunc;
+						EventProto['overrideDefault'] = returnFalseFunc;
 						// defaultCall run
 						if (!isStop && !isDefaultPrevented && defCall) {
-							Event.prototype['preReturn'] = defaultReturn = defCall.apply(_obj, arguments);
-							Event.prototype['defaultReturn'] = defaultReturn;
+							EventProto['preReturn'] = defaultReturn = defCall.apply(_obj, arguments);
+							EventProto['defaultReturn'] = defaultReturn;
 						}
 
-						Event.prototype['setDefaultReturn'] = setDefaultReturn;
+						EventProto['setDefaultReturn'] = setDefaultReturn;
 
 						// after list run
 						if (!isDefaultPrevented) runList(_after, 0);
@@ -168,48 +168,48 @@
 						isStop = false;		// 为final 重置isStop
 						runList(_final, 0);
 					},
-					myRunParam = getRunParamFunc(_runParam, _baseParam, getParamFunc(getParam, setParam, _obj));
+					myRunParam = getRunParamFunc(_runParam, _baseParam, getParamFunc(getParam, setParam, _obj)),
+					Event = function(){
+						this['data'] = curFuncData.data;
+					},
+					EventProto = Event.prototype = {
+						'isDefaultPrevented': false,
+						'isDefaultOverrided': false,
+						'param': myRunParam,
+						'removeParam': removeParam,
+						'setDefaultReturn': returnFalseFunc,
+						'off': function(){
+							curFuncData.disabled = true;
+						},
+						'next': function(){			// 调用next只可能返回两种值 true 和 false
+							return runList(curList, ++curIndex);
+						},
+						'preventDefault': function(defReturn){
+							isDefaultPrevented = true;
+							EventProto['isDefaultPrevented'] = true;
+							EventProto['preventDefault'] = EventProto['setDefaultReturn'] = setDefaultReturn;
+							EventProto['overrideDefault'] = returnFalseFunc;
+							
+							return setDefaultReturn(defReturn);
+						},
+						'overrideDefault': function(newDefaultReturn){
+							defCall = newDefaultReturn;
+							EventProto['isDefaultOverrided'] = true;
+							return true;
+						},
+						'async': function(){
+							isInAsync = true;
+
+							return function(){
+								runList(curList, ++curIndex);
+								if (!hasRunAfter) runAfter();
+								if (!hasRunFinal) runFinal();
+							};
+						}
+					};
 
 				_runParam = {};			// 清空 防止影响到内部的嵌套调用
 
-				var Event = function(){
-					this['data'] = curFuncData.data;
-				};
-				Event.prototype = {
-					'isDefaultPrevented': false,
-					'isDefaultOverrided': false,
-					'param': myRunParam,
-					'removeParam': removeParam,
-					'setDefaultReturn': returnFalseFunc,
-					'off': function(){
-						curFuncData.disabled = true;
-					},
-					'next': function(){			// 调用next只可能返回两种值 true 和 false
-						return runList(curList, ++curIndex);
-					},
-					'preventDefault': function(defReturn){
-						isDefaultPrevented = true;
-						Event.prototype['isDefaultPrevented'] = true;
-						Event.prototype['preventDefault'] = Event.prototype['setDefaultReturn'] = setDefaultReturn;
-						Event.prototype['overrideDefault'] = returnFalseFunc;
-						
-						return setDefaultReturn(defReturn);
-					},
-					'overrideDefault': function(newDefaultReturn){
-						defCall = newDefaultReturn;
-						Event.prototype['isDefaultOverrided'] = true;
-						return true;
-					},
-					'async': function(){
-						isInAsync = true;
-
-						return function(){
-							runList(curList, ++curIndex);
-							if (!hasRunAfter) runAfter();
-							if (!hasRunFinal) runFinal();
-						};
-					}
-				};
 
 				args.unshift(null);			// Event placeholder
 
