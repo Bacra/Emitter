@@ -1,27 +1,11 @@
 /** tEmitter v1.0.1 */
 var tEmitter = (function(){
-
 	// 全局工具函数
 	function toArray(args){
 		return Array.prototype.slice.call(args);
 	}
 	function isPlainObject(obj){
 		return obj && obj !== null && typeof(obj) == 'object';
-	}
-	function getParamFunc(getParam, setParam, obj){
-		return function(data, widthBaseParam){
-			if (isPlainObject(data)) {
-				setParam(data, widthBaseParam);
-				return obj;
-			} else {
-				return getParam(data, widthBaseParam);
-			}
-		};
-	}
-	function getRunParamFunc(run, base, paramFunc){
-		extendDeep(paramFunc, base);
-		extend(paramFunc, run);
-		return paramFunc;
 	}
 	function extend(obj, obj2) {
 		for (var i  in obj2) {
@@ -43,9 +27,26 @@ var tEmitter = (function(){
 	}
 	function forEach(arr, callback){
 		for(var i = 0, num = arr.length; i < num; i++) {
-			if (callback(arr[i], i) === false) return;
+			callback(arr[i], i);
 		}
 	}
+
+	function getParamFunc(getParam, setParam, obj){
+		return function(data, widthBaseParam){
+			if (isPlainObject(data)) {
+				setParam(data, widthBaseParam);
+				return obj;
+			} else {
+				return getParam(data, widthBaseParam);
+			}
+		};
+	}
+	function getRunParamFunc(run, base, paramFunc){
+		extendDeep(paramFunc, base);
+		extend(paramFunc, run);
+		return paramFunc;
+	}
+	
 
 	function setDisabledCall(funcData){
 		funcData.disabled = true;
@@ -58,7 +59,9 @@ var tEmitter = (function(){
 	}
 	
 
-	function noop(){};
+	function returnFalseFunc(){
+		return false;
+	}
 
 
 	return function(defaultCall, _obj){
@@ -145,6 +148,7 @@ var tEmitter = (function(){
 			},
 			'emit': function(){
 				var args = toArray(arguments),
+					defCall = defaultCall,
 					preReturn, defaultReturn,
 					i, funcData,
 
@@ -178,17 +182,31 @@ var tEmitter = (function(){
 					this['data'] = funcData.data;
 					this['off'] = funcData.off;
 					this['preReturn'] = preReturn;
-					this['isDefaultPrevented'] = isDefaultPrevented;
-					this['next'] = function(){					// 调用next只可能返回两种值 true 和 false
-						return runList(list, ++i);
-					};
+					this['list'] = list;
 				};
 				Event.prototype = {
+					'isDefaultPrevented': false,
+					'isDefaultOverrided': false,
 					'param': myRunParam,
 					'removeParam': removeParam,
-					'preventDefault': function(){
+					'setDefaultReturn': returnFalseFunc,
+					'next': function(){			// 调用next只可能返回两种值 true 和 false
+						return runList(this['list'], ++i);
+					},
+					'preventDefault': function(defReturn){
 						isDefaultPrevented = true;
-						this['isDefaultPrevented'] = true;
+						Event.prototype['isDefaultPrevented'] = true;
+						Event.prototype['preventDefault'] = returnFalseFunc;
+						defaultReturn = defReturn;
+						Event.prototype['defaultReturn'] = defReturn;
+
+						return true;
+					},
+					'overrideDefault': function(newDefaultReturn){
+						defCall = newDefaultReturn;
+						Event.prototype['isDefaultOverrided'] = true;
+						Event.prototype['overrideDefault'] = returnFalseFunc;
+						return true;
 					}
 				};
 
@@ -198,17 +216,22 @@ var tEmitter = (function(){
 				// before list run
 				runList(_before, 0);
 
+				Event.prototype['preventDefault'] = returnFalseFunc;
+				Event.prototype['overrideDefault'] = returnFalseFunc;
 				// defaultCall run
-				if (!isStop && !isDefaultPrevented && defaultCall) {
-					preReturn = defaultReturn = defaultCall.apply(_obj, arguments);
+				if (!isStop && !isDefaultPrevented && defCall) {
+					preReturn = defaultReturn = defCall.apply(_obj, arguments);
+					Event.prototype['defaultReturn'] = defaultReturn;
 				}
 
-
-				Event.prototype['defaultReturn'] = defaultReturn;
-				Event.prototype['preventDefault'] = noop;
+				Event.prototype['setDefaultReturn'] = function(defReturn){
+					defaultReturn = defReturn;
+					Event.prototype['defaultReturn'] = defReturn;
+					return true;
+				};
 
 				// after list run
-				runList(_after, 0);
+				if (!isDefaultPrevented) runList(_after, 0);
 
 				// final list run
 				isStop = false;		// 为final 重置isStop
