@@ -141,6 +141,11 @@
 
 						return true;
 					},
+					setDefaultReturn = function(defReturn){
+						defaultReturn = defReturn;
+						Event.prototype['defaultReturn'] = defReturn;
+						return true;
+					},
 					isInAsync = false,
 					hasRunAfter = false,
 					runAfter = function(){
@@ -153,11 +158,7 @@
 							Event.prototype['defaultReturn'] = defaultReturn;
 						}
 
-						Event.prototype['setDefaultReturn'] = function(defReturn){
-							defaultReturn = defReturn;
-							Event.prototype['defaultReturn'] = defReturn;
-							return true;
-						};
+						Event.prototype['setDefaultReturn'] = setDefaultReturn;
 
 						// after list run
 						if (!isDefaultPrevented) runList(_after, 0);
@@ -191,16 +192,14 @@
 					'preventDefault': function(defReturn){
 						isDefaultPrevented = true;
 						Event.prototype['isDefaultPrevented'] = true;
-						Event.prototype['preventDefault'] = returnFalseFunc;
-						defaultReturn = defReturn;
-						Event.prototype['defaultReturn'] = defReturn;
-
-						return true;
+						Event.prototype['preventDefault'] = Event.prototype['setDefaultReturn'] = setDefaultReturn;
+						Event.prototype['overrideDefault'] = returnFalseFunc;
+						
+						return setDefaultReturn(defReturn);
 					},
 					'overrideDefault': function(newDefaultReturn){
 						defCall = newDefaultReturn;
 						Event.prototype['isDefaultOverrided'] = true;
-						Event.prototype['overrideDefault'] = returnFalseFunc;
 						return true;
 					},
 					'async': function(){
