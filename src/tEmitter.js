@@ -142,6 +142,33 @@
 
 						return true;
 					},
+					isInAsync = false,
+					hasRunAfter = false,
+					runAfter = function(){
+						hasRunAfter = true;
+						Event.prototype['preventDefault'] = returnFalseFunc;
+						Event.prototype['overrideDefault'] = returnFalseFunc;
+						// defaultCall run
+						if (!isStop && !isDefaultPrevented && defCall) {
+							preReturn = defaultReturn = defCall.apply(_obj, arguments);
+							Event.prototype['defaultReturn'] = defaultReturn;
+						}
+
+						Event.prototype['setDefaultReturn'] = function(defReturn){
+							defaultReturn = defReturn;
+							Event.prototype['defaultReturn'] = defReturn;
+							return true;
+						};
+
+						// after list run
+						if (!isDefaultPrevented) runList(_after, 0);
+					},
+					hasRunFinal = false,
+					runFinal = function(){
+						// final list run
+						isStop = false;		// 为final 重置isStop
+						runList(_final, 0);
+					},
 					myRunParam = getRunParamFunc(_runParam, _baseParam, getParamFunc(getParam, setParam, _obj));
 
 				_runParam = {};			// 清空 防止影响到内部的嵌套调用
@@ -175,35 +202,26 @@
 						Event.prototype['isDefaultOverrided'] = true;
 						Event.prototype['overrideDefault'] = returnFalseFunc;
 						return true;
+					},
+					'async': function(){
+						isInAsync = true;
+
+						var list = this['list'];
+						return function(){
+							runList(list, ++i);
+							if (!hasRunAfter) runAfter();
+							if (!hasRunFinal) runFinal();
+						};
 					}
 				};
 
 				args.unshift(null);			// Event placeholder
 
-
 				// before list run
 				runList(_before, 0);
 
-				Event.prototype['preventDefault'] = returnFalseFunc;
-				Event.prototype['overrideDefault'] = returnFalseFunc;
-				// defaultCall run
-				if (!isStop && !isDefaultPrevented && defCall) {
-					preReturn = defaultReturn = defCall.apply(_obj, arguments);
-					Event.prototype['defaultReturn'] = defaultReturn;
-				}
-
-				Event.prototype['setDefaultReturn'] = function(defReturn){
-					defaultReturn = defReturn;
-					Event.prototype['defaultReturn'] = defReturn;
-					return true;
-				};
-
-				// after list run
-				if (!isDefaultPrevented) runList(_after, 0);
-
-				// final list run
-				isStop = false;		// 为final 重置isStop
-				runList(_final, 0);
+				if (!isInAsync) runAfter();
+				if (!isInAsync) runFinal();
 
 				return defaultReturn;
 			}
