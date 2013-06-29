@@ -56,9 +56,7 @@
 			var funcData = {
 				data: data,
 				func: func,
-				off: function(){
-					funcData.disabled = true;
-				}
+				disabled: false
 			};
 
 			getList(stepName).push(funcData);
@@ -118,22 +116,23 @@
 				var args = toArray(arguments),
 					defCall = defaultCall,
 					preReturn, defaultReturn,
-					i, funcData,
+					curIndex, curFuncData, curList,
 
 					isStop = false,
 					isDefaultPrevented = false,
 					runList = function(list, startIndex){
-						for (i = startIndex; !isStop && i < list.length; i++) {
-							funcData = list[i];
-							if (funcData.disabled) {
-								list.splice(i, 1);
-								i--;
+						curList = list;
+						for (curIndex = startIndex; !isStop && curIndex < list.length; curIndex++) {
+							curFuncData = list[curIndex];
+							if (curFuncData.disabled) {
+								list.splice(curIndex, 1);
+								curIndex--;
 								continue;
 							}
 
-							args[0] = new Event(funcData, list);
+							args[0] = new Event();
 
-							preReturn = funcData.func.apply(_obj, args);
+							preReturn = curFuncData.func.apply(_obj, args);
 							if (preReturn === false) {
 								isStop = true;
 								return false;
@@ -173,11 +172,9 @@
 
 				_runParam = {};			// 清空 防止影响到内部的嵌套调用
 
-				var Event = function(funcData, list){
-					this['data'] = funcData.data;
-					this['off'] = funcData.off;
+				var Event = function(){
+					this['data'] = curFuncData.data;
 					this['preReturn'] = preReturn;
-					this['list'] = list;
 				};
 				Event.prototype = {
 					'isDefaultPrevented': false,
@@ -185,8 +182,11 @@
 					'param': myRunParam,
 					'removeParam': removeParam,
 					'setDefaultReturn': returnFalseFunc,
+					'off': function(){
+						curFuncData.disabled = true;
+					},
 					'next': function(){			// 调用next只可能返回两种值 true 和 false
-						return runList(this['list'], ++i);
+						return runList(curList, ++curIndex);
 					},
 					'preventDefault': function(defReturn){
 						isDefaultPrevented = true;
@@ -206,9 +206,8 @@
 					'async': function(){
 						isInAsync = true;
 
-						var list = this['list'];
 						return function(){
-							runList(list, ++i);
+							runList(curList, ++curIndex);
 							if (!hasRunAfter) runAfter();
 							if (!hasRunFinal) runFinal();
 						};
