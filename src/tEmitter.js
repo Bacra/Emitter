@@ -1,11 +1,4 @@
 
-	// 全局工具函数
-	function toArray(args){
-		return Array.prototype.slice.call(args);
-	}
-	function isPlainObject(obj){
-		return obj && obj !== null && typeof(obj) == 'object';
-	}
 	function getParamFunc(getParam, setParam, obj){
 		return function(data, widthBaseParam){
 			if (isPlainObject(data)) {
@@ -21,29 +14,7 @@
 		extend(paramFunc, run);
 		return paramFunc;
 	}
-	function extend(obj, obj2) {
-		for (var i  in obj2) {
-			obj[i] = obj2[i];
-		}
-	}
-	function extendDeep(obj, obj2) {
-		var temp, temp2;
-		for (var i in obj2) {
-			temp = obj2[i];
-			if (isPlainObject(temp)) {
-				temp2 = obj[i];
-				if (!temp2) obj[i] = temp2 = {};
-				extendDeep(temp2, obj[i]);
-			} else {
-				obj[i] = temp;
-			}
-		}
-	}
-	function forEach(arr, callback){
-		for(var i = 0, num = arr.length; i < num; i++) {
-			if (callback(arr[i], i) === false) return;
-		}
-	}
+	
 
 	function setDisabledCall(funcData){
 		funcData.disabled = true;
@@ -85,9 +56,7 @@
 			var funcData = {
 				data: data,
 				func: func,
-				off: function(){
-					funcData.disabled = true;
-				}
+				disabled: false
 			};
 
 			getList(stepName).push(funcData);
@@ -146,24 +115,24 @@
 			'emit': function(){
 				var args = toArray(arguments),
 					defCall = defaultCall,
-					preReturn, defaultReturn,
-					i, funcData,
+					defaultReturn,
+					curIndex, curFuncData, curList,
 
 					isStop = false,
 					isDefaultPrevented = false,
 					runList = function(list, startIndex){
-						for (i = startIndex; !isStop && i < list.length; i++) {
-							funcData = list[i];
-							if (funcData.disabled) {
-								list.splice(i, 1);
-								i--;
+						curList = list;
+						for (curIndex = startIndex; !isStop && curIndex < list.length; curIndex++) {
+							curFuncData = list[curIndex];
+							if (curFuncData.disabled) {
+								list.splice(curIndex, 1);
+								curIndex--;
 								continue;
 							}
 
-							args[0] = new Event(funcData, list);
+							args[0] = new Event();
 
-							preReturn = funcData.func.apply(_obj, args);
-							if (preReturn === false) {
+							if ((EventProto['preReturn'] = curFuncData.func.apply(_obj, args)) === false) {
 								isStop = true;
 								return false;
 							}
@@ -171,68 +140,84 @@
 
 						return true;
 					},
-					myRunParam = getRunParamFunc(_runParam, _baseParam, getParamFunc(getParam, setParam, _obj));
+					setDefaultReturn = function(defReturn){
+						defaultReturn = defReturn;
+						EventProto['defaultReturn'] = defReturn;
+						return true;
+					},
+					isInAsync = false,
+					hasRunAfter = false,
+					runAfter = function(){
+						hasRunAfter = true;
+						EventProto['preventDefault'] = returnFalseFunc;
+						EventProto['overrideDefault'] = returnFalseFunc;
+						// defaultCall run
+						if (!isStop && !isDefaultPrevented && defCall) {
+							EventProto['preReturn'] = defaultReturn = defCall.apply(_obj, arguments);
+							EventProto['defaultReturn'] = defaultReturn;
+						}
+
+						EventProto['setDefaultReturn'] = setDefaultReturn;
+
+						// after list run
+						if (!isDefaultPrevented) runList(_after, 0);
+					},
+					hasRunFinal = false,
+					runFinal = function(){
+						// final list run
+						isStop = false;		// 为final 重置isStop
+						runList(_final, 0);
+					},
+					myRunParam = getRunParamFunc(_runParam, _baseParam, getParamFunc(getParam, setParam, _obj)),
+					Event = function(){
+						this['data'] = curFuncData.data;
+					},
+					EventProto = Event.prototype = {
+						'isDefaultPrevented': false,
+						'isDefaultOverrided': false,
+						'param': myRunParam,
+						'removeParam': removeParam,
+						'setDefaultReturn': returnFalseFunc,
+						'off': function(){
+							curFuncData.disabled = true;
+						},
+						'next': function(){			// 调用next只可能返回两种值 true 和 false
+							return runList(curList, ++curIndex);
+						},
+						'preventDefault': function(defReturn){
+							isDefaultPrevented = true;
+							EventProto['isDefaultPrevented'] = true;
+							EventProto['preventDefault'] = EventProto['setDefaultReturn'] = setDefaultReturn;
+							EventProto['overrideDefault'] = returnFalseFunc;
+							
+							return setDefaultReturn(defReturn);
+						},
+						'overrideDefault': function(newDefaultReturn){
+							defCall = newDefaultReturn;
+							EventProto['isDefaultOverrided'] = true;
+							return true;
+						},
+						'async': function(){
+							isInAsync = true;
+
+							return function(){
+								runList(curList, ++curIndex);
+								if (!hasRunAfter) runAfter();
+								if (!hasRunFinal) runFinal();
+							};
+						}
+					};
 
 				_runParam = {};			// 清空 防止影响到内部的嵌套调用
 
-				var Event = function(funcData, list){
-					this['data'] = funcData.data;
-					this['off'] = funcData.off;
-					this['preReturn'] = preReturn;
-					this['list'] = list;
-				};
-				Event.prototype = {
-					'isDefaultPrevented': false,
-					'isDefaultOverrided': false,
-					'param': myRunParam,
-					'removeParam': removeParam,
-					'setDefaultReturn': returnFalseFunc,
-					'next': function(){			// 调用next只可能返回两种值 true 和 false
-						return runList(this['list'], ++i);
-					},
-					'preventDefault': function(defReturn){
-						isDefaultPrevented = true;
-						Event.prototype['isDefaultPrevented'] = true;
-						Event.prototype['preventDefault'] = returnFalseFunc;
-						defaultReturn = defReturn;
-						Event.prototype['defaultReturn'] = defReturn;
-
-						return true;
-					},
-					'overrideDefault': function(newDefaultReturn){
-						defCall = newDefaultReturn;
-						Event.prototype['isDefaultOverrided'] = true;
-						Event.prototype['overrideDefault'] = returnFalseFunc;
-						return true;
-					}
-				};
 
 				args.unshift(null);			// Event placeholder
-
 
 				// before list run
 				runList(_before, 0);
 
-				Event.prototype['preventDefault'] = returnFalseFunc;
-				Event.prototype['overrideDefault'] = returnFalseFunc;
-				// defaultCall run
-				if (!isStop && !isDefaultPrevented && defCall) {
-					preReturn = defaultReturn = defCall.apply(_obj, arguments);
-					Event.prototype['defaultReturn'] = defaultReturn;
-				}
-
-				Event.prototype['setDefaultReturn'] = function(defReturn){
-					defaultReturn = defReturn;
-					Event.prototype['defaultReturn'] = defReturn;
-					return true;
-				};
-
-				// after list run
-				if (!isDefaultPrevented) runList(_after, 0);
-
-				// final list run
-				isStop = false;		// 为final 重置isStop
-				runList(_final, 0);
+				if (!isInAsync) runAfter();
+				if (!isInAsync) runFinal();
 
 				return defaultReturn;
 			}
