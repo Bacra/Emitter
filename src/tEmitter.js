@@ -32,7 +32,7 @@
 	}
 
 
-	return function(defaultCall, _obj){
+	return function(defaultCall, _obj){		// obj 仅仅作为方法返回值及call apply作用域使用 无特殊作用
 		var _before = [],
 			_after = [],
 			_final = [],
@@ -135,6 +135,8 @@
 								isStop = true;
 								return false;
 							}
+
+							if (isInAsync) return false;
 						}
 
 						return true;
@@ -172,6 +174,7 @@
 					EventProto = Event.prototype = {
 						'isDefaultPrevented': false,
 						'isDefaultOverrided': false,
+						'isInAsync': false,
 						'param': myRunParam,
 						'removeParam': removeParam,
 						'setDefReturn': returnFalseFunc,
@@ -197,11 +200,19 @@
 						},
 						'async': function(){
 							isInAsync = true;
+							EventProto['isInAsync'] = true;
 
 							return function(){
-								runList(curList, ++curIndex);
-								if (!hasRunAfter) runAfter();
-								if (!hasRunFinal) runFinal();
+								if (!isInAsync) {
+									isInAsync = false;
+									EventProto['isInAsync'] = false;
+									
+									runList(curList, ++curIndex);
+									if (!hasRunAfter) runAfter();
+									if (!hasRunFinal) runFinal();
+								}
+								
+								if (!isInAsync) return EventProto['defReturn'];
 							};
 						}
 					};
@@ -217,7 +228,7 @@
 				if (!isInAsync) runAfter();
 				if (!isInAsync) runFinal();
 
-				return EventProto['defReturn'];
+				if (!isInAsync) return EventProto['defReturn'];
 			}
 		};
 	};
