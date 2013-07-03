@@ -74,39 +74,43 @@
 			if (widthBaseParam) delete _baseParam[name];
 			delete _runParam[name];
 		}
+
+		function on(){
+			addEventListener.apply(null, arguments);
+			return _obj;
+		}
+		function off(stepName, func){
+			if (stepName && func) {
+				findFuncInList(func, getList(stepName), setDisabledCall);
+			} else if (stepName) {
+				if (typeof(stepName) == 'function') {
+					findFuncInList(stepName, _before, setDisabledCall);
+					findFuncInList(stepName, _after, setDisabledCall);
+					findFuncInList(stepName, _final, setDisabledCall);
+				} else {
+					forEach(getList(stepName), setDisabledCall);
+				}
+			} else {
+				forEach(_before, setDisabledCall);
+				forEach(_after, setDisabledCall);
+				forEach(_final, setDisabledCall);
+			}
+
+			return _obj;
+		}
+		function once(){
+			var funcData = addEventListener.apply(null, arguments);
+			addEventListener('final', function(){
+				funcData.disabled = true;
+			});
+		}
 		
 		
 
 		return {
-			'on': function(){
-				addEventListener.apply(null, arguments);
-				return _obj;
-			},
-			'off': function(stepName, func){
-				if (stepName && func) {
-					findFuncInList(func, getList(stepName), setDisabledCall);
-				} else if (stepName) {
-					if (typeof(stepName) == 'function') {
-						findFuncInList(stepName, _before, setDisabledCall);
-						findFuncInList(stepName, _after, setDisabledCall);
-						findFuncInList(stepName, _final, setDisabledCall);
-					} else {
-						forEach(getList(stepName), setDisabledCall);
-					}
-				} else {
-					forEach(_before, setDisabledCall);
-					forEach(_after, setDisabledCall);
-					forEach(_final, setDisabledCall);
-				}
-
-				return _obj;
-			},
-			'once': function(){
-				var funcData = addEventListener.apply(null, arguments);
-				addEventListener('final', function(){
-					funcData.disabled = true;
-				});
-			},
+			'on': on,
+			'off': off,
+			'once': once,
 			'param': getParamFunc(getParam, setParam, _obj),
 			'removeParam': removeParam,
 			'trigger': function(){
@@ -175,10 +179,13 @@
 						'isDefaultPrevented': false,
 						'isDefaultOverrided': false,
 						'isInAsync': false,
+						'on': on,
+						'off': off,
+						'once': once,
 						'param': myRunParam,
 						'removeParam': removeParam,
 						'setDefReturn': returnFalseFunc,
-						'off': function(){
+						'offSelf': function(){
 							curFuncData.disabled = true;
 						},
 						'next': function(){			// 调用next只可能返回两种值 true 和 false
@@ -206,7 +213,7 @@
 								if (!isInAsync) {
 									isInAsync = false;
 									EventProto['isInAsync'] = false;
-									
+
 									runList(curList, ++curIndex);
 									if (!hasRunAfter) runAfter();
 									if (!hasRunFinal) runFinal();
