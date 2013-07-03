@@ -139,8 +139,8 @@
 
 						return true;
 					},
-					setDefaultReturn = function(defReturn){
-						EventProto['defaultReturn'] = defReturn;
+					setDefReturn = function(defReturn){
+						EventProto['defReturn'] = defReturn;
 						return true;
 					},
 					isInAsync = false,
@@ -151,10 +151,10 @@
 						EventProto['overrideDefault'] = returnFalseFunc;
 						// defaultCall run
 						if (!isStop && !isDefaultPrevented) {
-							EventProto['defaultReturn'] = EventProto['preReturn'] = defCall ? defCall.apply(_obj, arguments) : undefined;
+							EventProto['defReturn'] = EventProto['preReturn'] = defCall ? defCall.apply(_obj, arguments) : undefined;
 						}
 
-						EventProto['setDefaultReturn'] = setDefaultReturn;
+						EventProto['setDefReturn'] = setDefReturn;
 
 						// after list run
 						if (!isDefaultPrevented) runList(_after, 0);
@@ -174,7 +174,7 @@
 						'isDefaultOverrided': false,
 						'param': myRunParam,
 						'removeParam': removeParam,
-						'setDefaultReturn': returnFalseFunc,
+						'setDefReturn': returnFalseFunc,
 						'off': function(){
 							curFuncData.disabled = true;
 						},
@@ -184,15 +184,15 @@
 						'preventDefault': function(defReturn){
 							isDefaultPrevented = true;
 							EventProto['isDefaultPrevented'] = true;
-							EventProto['preventDefault'] = EventProto['setDefaultReturn'] = setDefaultReturn;
+							EventProto['preventDefault'] = EventProto['setDefReturn'] = setDefReturn;
 							EventProto['overrideDefault'] = returnFalseFunc;
 							
-							return setDefaultReturn(defReturn);
+							return setDefReturn(defReturn);
 						},
 						'overrideDefault': function(newDefaultReturn){
 							defCall = newDefaultReturn;
 							EventProto['isDefaultOverrided'] = true;
-							EventProto['setDefaultReturn'] = setDefaultReturn;
+							EventProto['setDefReturn'] = setDefReturn;
 							return true;
 						},
 						'async': function(){
@@ -217,7 +217,7 @@
 				if (!isInAsync) runAfter();
 				if (!isInAsync) runFinal();
 
-				return EventProto['defaultReturn'];
+				return EventProto['defReturn'];
 			}
 		};
 	};
