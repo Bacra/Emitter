@@ -195,6 +195,7 @@
 						'overrideDefault': function(newDefaultReturn){
 							defCall = newDefaultReturn;
 							EventProto['isDefaultOverrided'] = true;
+							EventProto['setDefaultReturn'] = setDefaultReturn;
 							return true;
 						},
 						'async': function(){
