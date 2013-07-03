@@ -38,7 +38,11 @@ Event对象包含如下属性和方法：
 * `defaultReturn`: 所有队列执行结束之后方法的返回值
 * `isDefaultPrevented`: 默认方法执行是否被阻断状态（直接修改无效）
 * `isDefaultOverrided`: 默认方法是否被改写（直接修改无效）
-* `off()`: 从当前队列中删除此方法
+* `isInAsync`: 是否处于异步处理等待时期（直接修改无效）
+* `on([timeline, ] [data, ] func)`: 同上面的`on`方法
+* `off([timeline, ] [func])`: 同上面的`off`方法
+* `once([timeline, ] [data, ] func)`: 同上面的`once`方法
+* `offSelf()`: 从当前队列中删除此方法
 * `next()`: 调用当前队列的（注意：不跨队列，并且返回值只有`true`和`false`）
 * `param(data [, widthBaseParam])`: 添加/读取缓存的参数
 * `removeParam(name, [, widthBaseParam])`: 移除指定的参数
