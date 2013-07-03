@@ -115,7 +115,6 @@
 			'emit': function(){
 				var args = toArray(arguments),
 					defCall = defaultCall,
-					defaultReturn,
 					curIndex, curFuncData, curList,
 
 					isStop = false,
@@ -141,7 +140,6 @@
 						return true;
 					},
 					setDefaultReturn = function(defReturn){
-						defaultReturn = defReturn;
 						EventProto['defaultReturn'] = defReturn;
 						return true;
 					},
@@ -152,9 +150,8 @@
 						EventProto['preventDefault'] = returnFalseFunc;
 						EventProto['overrideDefault'] = returnFalseFunc;
 						// defaultCall run
-						if (!isStop && !isDefaultPrevented && defCall) {
-							EventProto['preReturn'] = defaultReturn = defCall.apply(_obj, arguments);
-							EventProto['defaultReturn'] = defaultReturn;
+						if (!isStop && !isDefaultPrevented) {
+							EventProto['defaultReturn'] = EventProto['preReturn'] = defCall ? defCall.apply(_obj, arguments) : undefined;
 						}
 
 						EventProto['setDefaultReturn'] = setDefaultReturn;
@@ -220,7 +217,7 @@
 				if (!isInAsync) runAfter();
 				if (!isInAsync) runFinal();
 
-				return defaultReturn;
+				return EventProto['defaultReturn'];
 			}
 		};
 	};
