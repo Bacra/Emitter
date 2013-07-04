@@ -1,27 +1,11 @@
 /** tEmitter v1.0.1 */
 var tEmitter = (function(){
-
 	// 全局工具函数
 	function toArray(args){
 		return Array.prototype.slice.call(args);
 	}
 	function isPlainObject(obj){
 		return obj && obj !== null && typeof(obj) == 'object';
-	}
-	function getParamFunc(getParam, setParam, obj){
-		return function(data, widthBaseParam){
-			if (isPlainObject(data)) {
-				setParam(data, widthBaseParam);
-				return obj;
-			} else {
-				return getParam(data, widthBaseParam);
-			}
-		};
-	}
-	function getRunParamFunc(run, base, paramFunc){
-		extendDeep(paramFunc, base);
-		extend(paramFunc, run);
-		return paramFunc;
 	}
 	function extend(obj, obj2) {
 		for (var i  in obj2) {
@@ -43,9 +27,26 @@ var tEmitter = (function(){
 	}
 	function forEach(arr, callback){
 		for(var i = 0, num = arr.length; i < num; i++) {
-			if (callback(arr[i], i) === false) return;
+			callback(arr[i], i);
 		}
 	}
+
+	function getParamFunc(getParam, setParam, obj){
+		return function(data, widthBaseParam){
+			if (isPlainObject(data)) {
+				setParam(data, widthBaseParam);
+				return obj;
+			} else {
+				return getParam(data, widthBaseParam);
+			}
+		};
+	}
+	function getRunParamFunc(run, base, paramFunc){
+		extendDeep(paramFunc, base);
+		extend(paramFunc, run);
+		return paramFunc;
+	}
+	
 
 	function setDisabledCall(funcData){
 		funcData.disabled = true;
@@ -58,10 +59,12 @@ var tEmitter = (function(){
 	}
 	
 
-	function noop(){};
+	function returnFalseFunc(){
+		return false;
+	}
 
 
-	return function(defaultCall, _obj){
+	return function(defaultCall, _obj){		// obj 仅仅作为方法返回值及call apply作用域使用 无特殊作用
 		var _before = [],
 			_after = [],
 			_final = [],
@@ -85,9 +88,7 @@ var tEmitter = (function(){
 			var funcData = {
 				data: data,
 				func: func,
-				off: function(){
-					funcData.disabled = true;
-				}
+				disabled: false
 			};
 
 			getList(stepName).push(funcData);
@@ -105,39 +106,43 @@ var tEmitter = (function(){
 			if (widthBaseParam) delete _baseParam[name];
 			delete _runParam[name];
 		}
+
+		function on(){
+			addEventListener.apply(null, arguments);
+			return _obj;
+		}
+		function off(stepName, func){
+			if (stepName && func) {
+				findFuncInList(func, getList(stepName), setDisabledCall);
+			} else if (stepName) {
+				if (typeof(stepName) == 'function') {
+					findFuncInList(stepName, _before, setDisabledCall);
+					findFuncInList(stepName, _after, setDisabledCall);
+					findFuncInList(stepName, _final, setDisabledCall);
+				} else {
+					forEach(getList(stepName), setDisabledCall);
+				}
+			} else {
+				forEach(_before, setDisabledCall);
+				forEach(_after, setDisabledCall);
+				forEach(_final, setDisabledCall);
+			}
+
+			return _obj;
+		}
+		function once(){
+			var funcData = addEventListener.apply(null, arguments);
+			addEventListener('final', function(){
+				funcData.disabled = true;
+			});
+		}
 		
 		
 
 		return {
-			'on': function(){
-				addEventListener.apply(null, arguments);
-				return _obj;
-			},
-			'off': function(stepName, func){
-				if (stepName && func) {
-					findFuncInList(func, getList(stepName), setDisabledCall);
-				} else if (stepName) {
-					if (typeof(stepName) == 'function') {
-						findFuncInList(stepName, _before, setDisabledCall);
-						findFuncInList(stepName, _after, setDisabledCall);
-						findFuncInList(stepName, _final, setDisabledCall);
-					} else {
-						forEach(getList(stepName), setDisabledCall);
-					}
-				} else {
-					forEach(_before, setDisabledCall);
-					forEach(_after, setDisabledCall);
-					forEach(_final, setDisabledCall);
-				}
-
-				return _obj;
-			},
-			'once': function(){
-				var funcData = addEventListener.apply(null, arguments);
-				addEventListener('final', function(){
-					funcData.disabled = true;
-				});
-			},
+			'on': on,
+			'off': off,
+			'once': once,
 			'param': getParamFunc(getParam, setParam, _obj),
 			'removeParam': removeParam,
 			'trigger': function(){
@@ -145,76 +150,124 @@ var tEmitter = (function(){
 			},
 			'emit': function(){
 				var args = toArray(arguments),
-					preReturn, defaultReturn,
-					i, funcData,
+					defCall = defaultCall,
+					curIndex, curFuncData, curList,
 
 					isStop = false,
 					isDefaultPrevented = false,
 					runList = function(list, startIndex){
-						for (i = startIndex; !isStop && i < list.length; i++) {
-							funcData = list[i];
-							if (funcData.disabled) {
-								list.splice(i, 1);
-								i--;
+						curList = list;
+						for (curIndex = startIndex; !isStop && curIndex < list.length; curIndex++) {
+							curFuncData = list[curIndex];
+							if (curFuncData.disabled) {
+								list.splice(curIndex, 1);
+								curIndex--;
 								continue;
 							}
 
-							args[0] = new Event(funcData, list);
+							args[0] = new Event();
 
-							preReturn = funcData.func.apply(_obj, args);
-							if (preReturn === false) {
+							if ((EventProto['preReturn'] = curFuncData.func.apply(_obj, args)) === false) {
 								isStop = true;
 								return false;
 							}
+
+							if (isInAsync) return false;
 						}
 
 						return true;
 					},
-					myRunParam = getRunParamFunc(_runParam, _baseParam, getParamFunc(getParam, setParam, _obj));
+					setDefReturn = function(defReturn){
+						EventProto['defReturn'] = defReturn;
+						return true;
+					},
+					isInAsync = false,
+					hasRunAfter = false,
+					runAfter = function(){
+						hasRunAfter = true;
+						EventProto['preventDefault'] = returnFalseFunc;
+						EventProto['overrideDefault'] = returnFalseFunc;
+						// defaultCall run
+						if (!isStop && !isDefaultPrevented) {
+							EventProto['defReturn'] = EventProto['preReturn'] = defCall ? defCall.apply(_obj, arguments) : undefined;
+						}
+
+						EventProto['setDefReturn'] = setDefReturn;
+
+						// after list run
+						if (!isDefaultPrevented) runList(_after, 0);
+					},
+					hasRunFinal = false,
+					runFinal = function(){
+						// final list run
+						isStop = false;		// 为final 重置isStop
+						runList(_final, 0);
+					},
+					myRunParam = getRunParamFunc(_runParam, _baseParam, getParamFunc(getParam, setParam, _obj)),
+					Event = function(){
+						this['data'] = curFuncData.data;
+					},
+					EventProto = Event.prototype = {
+						'isDefaultPrevented': false,
+						'isDefaultOverrided': false,
+						'isInAsync': false,
+						'on': on,
+						'off': off,
+						'once': once,
+						'param': myRunParam,
+						'removeParam': removeParam,
+						'setDefReturn': returnFalseFunc,
+						'offSelf': function(){
+							curFuncData.disabled = true;
+						},
+						'next': function(){			// 调用next只可能返回两种值 true 和 false
+							return runList(curList, ++curIndex);
+						},
+						'preventDefault': function(defReturn){
+							isDefaultPrevented = true;
+							EventProto['isDefaultPrevented'] = true;
+							EventProto['preventDefault'] = EventProto['setDefReturn'] = setDefReturn;
+							EventProto['overrideDefault'] = returnFalseFunc;
+							
+							return setDefReturn(defReturn);
+						},
+						'overrideDefault': function(newDefaultReturn){
+							defCall = newDefaultReturn;
+							EventProto['isDefaultOverrided'] = true;
+							EventProto['setDefReturn'] = setDefReturn;
+							return true;
+						},
+						'async': function(){
+							isInAsync = true;
+							EventProto['isInAsync'] = true;
+
+							return function(){
+								if (isInAsync) {
+									isInAsync = false;
+									EventProto['isInAsync'] = false;
+
+									runList(curList, ++curIndex);
+									if (!hasRunAfter) runAfter();
+									if (!hasRunFinal) runFinal();
+								}
+								
+								if (!isInAsync) return EventProto['defReturn'];
+							};
+						}
+					};
 
 				_runParam = {};			// 清空 防止影响到内部的嵌套调用
 
-				var Event = function(funcData, list){
-					this['data'] = funcData.data;
-					this['off'] = funcData.off;
-					this['preReturn'] = preReturn;
-					this['isDefaultPrevented'] = isDefaultPrevented;
-					this['next'] = function(){					// 调用next只可能返回两种值 true 和 false
-						return runList(list, ++i);
-					};
-				};
-				Event.prototype = {
-					'param': myRunParam,
-					'removeParam': removeParam,
-					'preventDefault': function(){
-						isDefaultPrevented = true;
-						this['isDefaultPrevented'] = true;
-					}
-				};
 
 				args.unshift(null);			// Event placeholder
-
 
 				// before list run
 				runList(_before, 0);
 
-				// defaultCall run
-				if (!isStop && !isDefaultPrevented && defaultCall) {
-					preReturn = defaultReturn = defaultCall.apply(_obj, arguments);
-				}
+				if (!isInAsync) runAfter();
+				if (!isInAsync) runFinal();
 
-
-				Event.prototype['defaultReturn'] = defaultReturn;
-				Event.prototype['preventDefault'] = noop;
-
-				// after list run
-				runList(_after, 0);
-
-				// final list run
-				isStop = false;		// 为final 重置isStop
-				runList(_final, 0);
-
-				return defaultReturn;
+				if (!isInAsync) return EventProto['defReturn'];
 			}
 		};
 	};
