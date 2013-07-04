@@ -210,7 +210,7 @@
 							EventProto['isInAsync'] = true;
 
 							return function(){
-								if (!isInAsync) {
+								if (isInAsync) {
 									isInAsync = false;
 									EventProto['isInAsync'] = false;
 
