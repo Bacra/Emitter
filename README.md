@@ -93,6 +93,10 @@ Event对象包含如下属性和方法：
 
 Goto [Change Log](./CHANGELOG.md).
 
+## Unit Test
+
+Goto [MisEvent Test](https://github.com/Bacra/MisEvent.js/tree/master/test/test.html).
+
 ## License
 
 Emitter.js is available under the terms of the [MIT License](./LICENSE.md).
