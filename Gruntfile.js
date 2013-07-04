@@ -9,6 +9,7 @@ module.exports = function(grunt) {
 			node: {
 				src: [
 					'src/intro-node.js',
+					'src/util.js',
 					'src/tEmitter.js',
 					'src/outro.js'
 				],
@@ -17,6 +18,7 @@ module.exports = function(grunt) {
 			js: {
 				src: [
 					'src/intro-js.js',
+					'src/util.js',
 					'src/tEmitter.js',
 					'src/outro.js'
 				],
@@ -68,5 +70,6 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-gcc');
 	grunt.loadNpmTasks('grunt-contrib-concat');
 
-	grunt.registerTask('default', ['concat', 'gcc', 'fix', 'backup']);
+	grunt.registerTask('default', ['concat:js']);
+	grunt.registerTask('export', ['concat', 'gcc', 'fix', 'backup']);
 };
