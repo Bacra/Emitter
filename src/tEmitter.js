@@ -128,8 +128,7 @@
 						for (curIndex = startIndex; !isStop && curIndex < list.length; curIndex++) {
 							curFuncData = list[curIndex];
 							if (curFuncData.disabled) {
-								list.splice(curIndex, 1);
-								curIndex--;
+								list.splice(curIndex--, 1);
 								continue;
 							}
 
